@@ -256,16 +256,25 @@ export class Game {
 
   private shoot(): void {
     this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
-    const intersects = this.raycaster.intersectObjects(
-      this.enemies.map(e => e.getMesh()),
-      false
-    );
+
+    // Check all objects in the scene that could be hit
+    const walls = this.maze.getWalls();
+    const doors = this.maze.getDoors().map(d => d.getMesh());
+    const enemies = this.enemies.map(e => e.getMesh());
+    const allObjects = [...walls, ...doors, ...enemies];
+
+    const intersects = this.raycaster.intersectObjects(allObjects, false);
 
     if (intersects.length > 0) {
-      const hitEnemy = this.enemies.find(e => e.getMesh() === intersects[0].object);
+      // Check what we hit first
+      const hitObject = intersects[0].object;
+
+      // Only damage enemy if it's the first thing we hit (not blocked by wall/door)
+      const hitEnemy = this.enemies.find(e => e.getMesh() === hitObject);
       if (hitEnemy) {
         hitEnemy.takeDamage(34);
       }
+      // If we hit a wall or door first, bullet is blocked (no damage)
     }
   }
 

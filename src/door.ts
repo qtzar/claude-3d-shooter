@@ -16,8 +16,8 @@ export class Door {
     this.position = position.clone();
     this.rotation = rotation;
 
-    // Create door mesh
-    const doorGeometry = new THREE.BoxGeometry(0.2, 2.5, 2);
+    // Create door mesh - make it 4 units wide to fill the corridor
+    const doorGeometry = new THREE.BoxGeometry(0.2, 2.5, 4);
     const doorMaterial = new THREE.MeshStandardMaterial({
       color: 0x4a2511,
       roughness: 0.9,
@@ -32,7 +32,7 @@ export class Door {
     this.mesh.receiveShadow = true;
 
     // Add metal bands
-    const bandGeometry = new THREE.BoxGeometry(0.22, 0.1, 2);
+    const bandGeometry = new THREE.BoxGeometry(0.22, 0.1, 4);
     const bandMaterial = new THREE.MeshStandardMaterial({
       color: 0x333333,
       roughness: 0.5,
