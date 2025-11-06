@@ -193,15 +193,22 @@ export class Maze {
   }
 
   private addDecorations(offsetX: number, offsetZ: number): void {
-    // Add torches to every wall-adjacent walkable cell, and other decorations
+    // Add torches and decorations to walkable cells
+    // We need to limit torches to avoid exceeding WebGL texture limit
+    let torchCount = 0;
+    const maxTorches = 12; // Limit to stay under WebGL limits
+
     for (let z = 1; z < this.mazeSize - 1; z++) {
       for (let x = 1; x < this.mazeSize - 1; x++) {
         if (this.grid[z][x] === 0) {
           const posX = x * this.cellSize - offsetX + this.cellSize / 2;
           const posZ = z * this.cellSize - offsetZ + this.cellSize / 2;
 
-          // Always try to add torch if adjacent to wall
-          this.addTorch(x, z, posX, posZ, offsetX, offsetZ);
+          // Add torches but limit total count
+          if (torchCount < maxTorches && Math.random() < 0.15) {
+            const torchAdded = this.addTorch(x, z, posX, posZ, offsetX, offsetZ);
+            if (torchAdded) torchCount++;
+          }
 
           // 8% chance for other decorations in each walkable cell
           const rand = Math.random();
@@ -219,9 +226,10 @@ export class Maze {
         }
       }
     }
+    console.log('Added torches:', torchCount);
   }
 
-  private addTorch(x: number, z: number, posX: number, posZ: number, offsetX: number, offsetZ: number): void {
+  private addTorch(x: number, z: number, posX: number, posZ: number, offsetX: number, offsetZ: number): boolean {
     // Check if adjacent to a wall
     let torchPos: THREE.Vector3 | null = null;
 
@@ -257,11 +265,14 @@ export class Maze {
       this.scene.add(flame);
 
       // Point light for torch
-      const light = new THREE.PointLight(0xff8844, 0.5, 8);
+      const light = new THREE.PointLight(0xff8844, 0.8, 10);
       light.position.copy(flame.position);
-      light.castShadow = true;
+      light.castShadow = false; // Disable shadows on torch lights to save performance
       this.scene.add(light);
+
+      return true;
     }
+    return false;
   }
 
   private addBarrel(posX: number, posZ: number): void {
@@ -384,18 +395,24 @@ export class Maze {
   }
 
   public updateDoors(delta: number): void {
+    if (!this.doors) return;
     for (const door of this.doors) {
-      door.update(delta);
+      if (door) {
+        door.update(delta);
+      }
     }
   }
 
   public getDoors(): Door[] {
-    return this.doors;
+    return this.doors || [];
   }
 
   public checkDoorCollision(position: THREE.Vector3, radius: number = 0.5): boolean {
+    if (!this.doors || this.doors.length === 0) {
+      return false;
+    }
     for (const door of this.doors) {
-      if (door.checkCollision(position, radius)) {
+      if (door && door.checkCollision(position, radius)) {
         return true;
       }
     }

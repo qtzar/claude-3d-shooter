@@ -33,7 +33,7 @@ export class Game {
     // Initialize scene
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x1a1a1a);
-    this.scene.fog = new THREE.Fog(0x1a1a1a, 10, 50);
+    this.scene.fog = new THREE.Fog(0x1a1a1a, 15, 60);
 
     // Initialize camera
     this.camera = new THREE.PerspectiveCamera(
@@ -63,12 +63,12 @@ export class Game {
   }
 
   private setupLights(): void {
-    // Ambient light (darker for dungeon atmosphere)
-    const ambientLight = new THREE.AmbientLight(0x404040, 0.3);
+    // Ambient light (dim for atmosphere, torches will provide main lighting)
+    const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
     this.scene.add(ambientLight);
 
     // Directional light (dim overhead light)
-    const directionalLight = new THREE.DirectionalLight(0x888888, 0.4);
+    const directionalLight = new THREE.DirectionalLight(0x888888, 0.5);
     directionalLight.position.set(20, 40, 20);
     directionalLight.castShadow = true;
     directionalLight.shadow.camera.left = -50;
