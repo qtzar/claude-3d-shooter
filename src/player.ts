@@ -24,8 +24,8 @@ export class Player {
     this.velocity = new THREE.Vector3();
     this.weapons = new WeaponInventory();
 
-    // Spawn in a walkable position
-    const spawnPos = maze.getRandomWalkablePosition();
+    // Spawn in a safe position (away from doors)
+    const spawnPos = maze.getSafeSpawnPosition();
     this.position = new THREE.Vector3(spawnPos.x, 1.6, spawnPos.z);
     this.camera.position.copy(this.position);
   }

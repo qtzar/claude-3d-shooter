@@ -438,4 +438,33 @@ export class Maze {
       z * this.cellSize - offsetZ + this.cellSize / 2
     );
   }
+
+  // Get a safe spawn position (away from doors)
+  public getSafeSpawnPosition(): THREE.Vector3 {
+    let position: THREE.Vector3;
+    let attempts = 0;
+    const maxAttempts = 50;
+
+    do {
+      position = this.getRandomWalkablePosition();
+      attempts++;
+
+      // Check if position is far enough from all doors
+      let isSafe = true;
+      for (const door of this.doors) {
+        const distance = door.getDistanceTo(position);
+        if (distance < 5) { // Must be at least 5 units away from any door
+          isSafe = false;
+          break;
+        }
+      }
+
+      if (isSafe) {
+        return position;
+      }
+    } while (attempts < maxAttempts);
+
+    // If we can't find a safe position after many attempts, just return a walkable position
+    return this.getRandomWalkablePosition();
+  }
 }

@@ -8,6 +8,7 @@ import { HealthPickup } from './health-pickup';
 import { Maze } from './maze';
 import { WeaponPickup } from './weapon-pickup';
 import { WeaponType } from './weapon';
+import { SoundManager } from './sound';
 
 export class Game {
   private scene: THREE.Scene;
@@ -20,6 +21,7 @@ export class Game {
   private weaponPickups: WeaponPickup[] = [];
   private inputHandler: InputHandler;
   private ui: UI;
+  private soundManager: SoundManager;
   private clock: THREE.Clock;
   private isRunning: boolean = false;
   private raycaster: THREE.Raycaster;
@@ -58,6 +60,7 @@ export class Game {
     this.player = new Player(this.camera, this.maze);
     this.inputHandler = new InputHandler(this.canvas);
     this.ui = new UI();
+    this.soundManager = new SoundManager();
 
     // Setup scene
     this.setupLights();
@@ -158,7 +161,23 @@ export class Game {
     }
 
     const enemy = new Enemy(this.scene, this.maze, type);
-    const spawnPos = this.maze.getRandomWalkablePosition();
+
+    // Find a safe spawn position (away from doors and player)
+    let spawnPos: THREE.Vector3;
+    let attempts = 0;
+    const maxAttempts = 30;
+
+    do {
+      spawnPos = this.maze.getSafeSpawnPosition();
+      const distanceToPlayer = spawnPos.distanceTo(this.player.getPosition());
+      attempts++;
+
+      // Make sure enemy spawns at least 10 units away from player
+      if (distanceToPlayer > 10) {
+        break;
+      }
+    } while (attempts < maxAttempts);
+
     enemy.setPosition(spawnPos.x, 0, spawnPos.z);
     return enemy;
   }
@@ -166,6 +185,8 @@ export class Game {
   public start(): void {
     this.isRunning = true;
     this.inputHandler.lockPointer();
+    this.soundManager.resume(); // Resume audio context
+    this.soundManager.startBackgroundMusic();
     this.animate();
   }
 
@@ -188,12 +209,35 @@ export class Game {
     // Handle shooting
     if (this.inputHandler.isMouseDown && this.player.canShoot()) {
       this.shoot();
-      this.player.shoot();
+      const damage = this.player.shoot();
+
+      // Play weapon sound based on current weapon
+      if (damage > 0) {
+        const weaponType = this.player.getWeaponInventory().getCurrentWeapon();
+        switch (weaponType) {
+          case WeaponType.PISTOL:
+            this.soundManager.playPistolShoot();
+            break;
+          case WeaponType.SHOTGUN:
+            this.soundManager.playShotgunShoot();
+            break;
+          case WeaponType.RIFLE:
+            this.soundManager.playRifleShoot();
+            break;
+          case WeaponType.SNIPER:
+            this.soundManager.playSniperShoot();
+            break;
+          case WeaponType.ROCKET:
+            this.soundManager.playRocketShoot();
+            break;
+        }
+      }
     }
 
     // Handle reload
     if (this.inputHandler.isReloading) {
       this.player.reload();
+      this.soundManager.playReload();
       this.inputHandler.isReloading = false;
     }
 
@@ -221,6 +265,9 @@ export class Game {
                      enemyType === EnemyType.MEDIUM ? 100 : 200;
         this.ui.addScore(score);
 
+        // Play death sound
+        this.soundManager.playEnemyDeath();
+
         // Always drop a random weapon
         this.spawnWeaponPickup(enemyPosition);
 
@@ -243,6 +290,7 @@ export class Game {
         if (distance < 2 && enemy.canAttack()) {
           this.player.takeDamage(10);
           this.ui.updateHealth(this.player.getHealth());
+          this.soundManager.playPlayerHit();
           enemy.attack();
 
           if (this.player.getHealth() <= 0) {
@@ -264,6 +312,7 @@ export class Game {
         const inventory = this.player.getWeaponInventory();
         const currentWeapon = inventory.getCurrentWeapon();
         inventory.addAmmo(currentWeapon, 30);
+        this.soundManager.playPickup();
         pickup.destroy();
         this.ammoPickups.splice(i, 1);
       }
@@ -279,6 +328,7 @@ export class Game {
       if (distance < 1.5) {
         this.player.heal(50);
         this.ui.updateHealth(this.player.getHealth());
+        this.soundManager.playPickup();
         pickup.destroy();
         this.healthPickups.splice(i, 1);
       }
@@ -304,6 +354,7 @@ export class Game {
           this.player.addWeapon(weaponType, weaponData.maxAmmo);
         }
 
+        this.soundManager.playPickup();
         pickup.destroy();
         this.weaponPickups.splice(i, 1);
       }
@@ -336,6 +387,7 @@ export class Game {
         // Get damage from current weapon
         const damage = this.player.getWeaponInventory().getCurrentWeaponData().damage;
         hitEnemy.takeDamage(damage);
+        this.soundManager.playEnemyHit();
       }
       // If we hit a wall or door first, bullet is blocked (no damage)
     }
@@ -393,6 +445,7 @@ export class Game {
 
     if (closestDoor) {
       closestDoor.toggle();
+      this.soundManager.playDoorOpen();
     }
   }
 

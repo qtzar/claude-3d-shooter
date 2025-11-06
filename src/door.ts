@@ -1,65 +1,105 @@
 import * as THREE from 'three';
 
 export class Door {
-  private mesh: THREE.Mesh;
+  private doorMesh: THREE.Mesh;
+  private frameGroup: THREE.Group;
   private scene: THREE.Scene;
   private isOpen: boolean = false;
   private position: THREE.Vector3;
   private rotation: number;
-  private closedPosition: THREE.Vector3;
-  private openPosition: THREE.Vector3;
   private animationProgress: number = 0;
   private animationSpeed: number = 3;
+  private closedRotation: number = 0;
+  private openRotation: number = Math.PI / 2; // 90 degrees
 
   constructor(scene: THREE.Scene, position: THREE.Vector3, rotation: number) {
     this.scene = scene;
     this.position = position.clone();
     this.rotation = rotation;
 
-    // Create door mesh - make it 4 units wide to fill the corridor
-    const doorGeometry = new THREE.BoxGeometry(0.2, 2.5, 4);
-    const doorMaterial = new THREE.MeshStandardMaterial({
-      color: 0x4a2511,
+    // Create main group for the entire door assembly
+    this.frameGroup = new THREE.Group();
+    this.frameGroup.position.copy(position);
+    this.frameGroup.rotation.y = rotation;
+
+    // Create door frame (jamb)
+    const frameMaterial = new THREE.MeshStandardMaterial({
+      color: 0x3a2817,
       roughness: 0.9,
       metalness: 0.1,
+      emissive: 0x1a1208,
+      emissiveIntensity: 0.2
     });
 
-    this.mesh = new THREE.Mesh(doorGeometry, doorMaterial);
-    this.mesh.position.copy(position);
-    this.mesh.position.y = 1.25;
-    this.mesh.rotation.y = rotation;
-    this.mesh.castShadow = true;
-    this.mesh.receiveShadow = true;
+    // Left jamb
+    const leftJamb = new THREE.Mesh(
+      new THREE.BoxGeometry(0.3, 3, 0.3),
+      frameMaterial
+    );
+    leftJamb.position.set(-2.15, 1.5, 0);
+    leftJamb.castShadow = true;
+    leftJamb.receiveShadow = true;
+    this.frameGroup.add(leftJamb);
 
-    // Add metal bands
-    const bandGeometry = new THREE.BoxGeometry(0.22, 0.1, 4);
+    // Right jamb
+    const rightJamb = new THREE.Mesh(
+      new THREE.BoxGeometry(0.3, 3, 0.3),
+      frameMaterial
+    );
+    rightJamb.position.set(2.15, 1.5, 0);
+    rightJamb.castShadow = true;
+    rightJamb.receiveShadow = true;
+    this.frameGroup.add(rightJamb);
+
+    // Top jamb (header)
+    const topJamb = new THREE.Mesh(
+      new THREE.BoxGeometry(4.6, 0.3, 0.3),
+      frameMaterial
+    );
+    topJamb.position.set(0, 3, 0);
+    topJamb.castShadow = true;
+    topJamb.receiveShadow = true;
+    this.frameGroup.add(topJamb);
+
+    // Create door panel
+    const doorGeometry = new THREE.BoxGeometry(0.15, 2.6, 3.8);
+    const doorMaterial = new THREE.MeshStandardMaterial({
+      color: 0x6b3a1e,
+      roughness: 0.8,
+      metalness: 0.1,
+      emissive: 0x2a1508,
+      emissiveIntensity: 0.3
+    });
+
+    this.doorMesh = new THREE.Mesh(doorGeometry, doorMaterial);
+    this.doorMesh.position.set(-2.05, 1.45, 0); // Position at left edge (hinges on left)
+    this.doorMesh.castShadow = true;
+    this.doorMesh.receiveShadow = true;
+
+    // Add metal bands to door
+    const bandGeometry = new THREE.BoxGeometry(0.16, 0.1, 3.8);
     const bandMaterial = new THREE.MeshStandardMaterial({
-      color: 0x333333,
-      roughness: 0.5,
-      metalness: 0.8,
+      color: 0x444444,
+      roughness: 0.4,
+      metalness: 0.9,
     });
 
     const band1 = new THREE.Mesh(bandGeometry, bandMaterial);
     band1.position.y = 0.8;
-    this.mesh.add(band1);
+    this.doorMesh.add(band1);
 
     const band2 = new THREE.Mesh(bandGeometry, bandMaterial);
     band2.position.y = -0.8;
-    this.mesh.add(band2);
+    this.doorMesh.add(band2);
 
-    // Calculate open/closed positions
-    this.closedPosition = position.clone();
-    this.closedPosition.y = 1.25;
+    // Add door handle
+    const handleGeometry = new THREE.BoxGeometry(0.2, 0.1, 0.3);
+    const handle = new THREE.Mesh(handleGeometry, bandMaterial);
+    handle.position.set(0, 0, 1.5); // Right side of door
+    this.doorMesh.add(handle);
 
-    // Door slides to the side when opening
-    const slideDirection = new THREE.Vector3(
-      Math.sin(rotation),
-      0,
-      Math.cos(rotation)
-    );
-    this.openPosition = this.closedPosition.clone().add(slideDirection.multiplyScalar(2));
-
-    scene.add(this.mesh);
+    this.frameGroup.add(this.doorMesh);
+    scene.add(this.frameGroup);
   }
 
   public update(delta: number): void {
@@ -70,8 +110,9 @@ export class Door {
       this.animationProgress = Math.max(0, this.animationProgress - delta * this.animationSpeed);
     }
 
-    // Interpolate position
-    this.mesh.position.lerpVectors(this.closedPosition, this.openPosition, this.animationProgress);
+    // Interpolate rotation - door swings open around its hinge (left edge)
+    const currentRotation = THREE.MathUtils.lerp(this.closedRotation, this.openRotation, this.animationProgress);
+    this.doorMesh.rotation.y = currentRotation;
   }
 
   public toggle(): void {
@@ -95,21 +136,21 @@ export class Door {
   }
 
   public getMesh(): THREE.Mesh {
-    return this.mesh;
+    return this.doorMesh;
   }
 
   public checkCollision(position: THREE.Vector3, radius: number = 0.5): boolean {
-    // Only check collision if door is closed (or closing)
-    if (this.animationProgress > 0.5) {
+    // Only check collision if door is closed (or mostly closed)
+    if (this.animationProgress > 0.3) {
       return false; // Door is mostly open, no collision
     }
 
-    const doorPos = this.mesh.position;
+    const doorPos = this.position;
     const distX = Math.abs(position.x - doorPos.x);
     const distZ = Math.abs(position.z - doorPos.z);
 
     // Use a slightly larger collision box for doors
-    return distX < 1 + radius && distZ < 1 + radius;
+    return distX < 2 + radius && distZ < 2 + radius;
   }
 
   public getDistanceTo(position: THREE.Vector3): number {
