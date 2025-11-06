@@ -84,7 +84,12 @@ The built files will be in the `dist` directory.
   - Yellow/gold boxes restore 30 ammo (30% drop chance)
   - Red/pink boxes with white cross restore 50 health (20% drop chance)
 - **Maze**: Procedurally generated maze that regenerates each game
-- **Collision**: Both player and enemies cannot pass through walls but can slide along them
+- **Doors**: Interactive wooden doors in corridors
+  - Press E when near a door (within 3 units) to toggle open/closed
+  - Doors slide to the side when opening
+  - Enemies cannot open doors but can pass through open doors
+  - Use doors strategically to block enemy paths
+- **Collision**: Both player and enemies cannot pass through walls or closed doors but can slide along them
 
 ## Technology Stack
 
