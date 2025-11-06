@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 import { Player } from './player';
-import { Enemy } from './enemy';
+import { Enemy, EnemyType } from './enemy';
 import { InputHandler } from './input';
 import { UI } from './ui';
 import { AmmoPickup } from './ammo-pickup';
 import { HealthPickup } from './health-pickup';
 import { Maze } from './maze';
+import { WeaponPickup } from './weapon-pickup';
+import { WeaponType } from './weapon';
 
 export class Game {
   private scene: THREE.Scene;
@@ -15,6 +17,7 @@ export class Game {
   private enemies: Enemy[] = [];
   private ammoPickups: AmmoPickup[] = [];
   private healthPickups: HealthPickup[] = [];
+  private weaponPickups: WeaponPickup[] = [];
   private inputHandler: InputHandler;
   private ui: UI;
   private clock: THREE.Clock;
@@ -60,6 +63,7 @@ export class Game {
     this.setupLights();
     this.setupEnvironment();
     this.spawnEnemies();
+    this.spawnAmmoCaches();
   }
 
   private setupLights(): void {
@@ -135,11 +139,28 @@ export class Game {
 
   private spawnEnemies(): void {
     for (let i = 0; i < 5; i++) {
-      const enemy = new Enemy(this.scene, this.maze);
-      const spawnPos = this.maze.getRandomWalkablePosition();
-      enemy.setPosition(spawnPos.x, 0, spawnPos.z);
+      const enemy = this.spawnRandomEnemy();
       this.enemies.push(enemy);
     }
+  }
+
+  private spawnRandomEnemy(): Enemy {
+    // Spawn probabilities: 50% basic, 35% medium, 15% hard
+    const rand = Math.random();
+    let type: EnemyType;
+
+    if (rand < 0.5) {
+      type = EnemyType.BASIC;
+    } else if (rand < 0.85) {
+      type = EnemyType.MEDIUM;
+    } else {
+      type = EnemyType.HARD;
+    }
+
+    const enemy = new Enemy(this.scene, this.maze, type);
+    const spawnPos = this.maze.getRandomWalkablePosition();
+    enemy.setPosition(spawnPos.x, 0, spawnPos.z);
+    return enemy;
   }
 
   public start(): void {
@@ -157,6 +178,12 @@ export class Game {
 
     // Update player
     this.player.update(delta, this.inputHandler);
+
+    // Handle weapon switching
+    if (this.inputHandler.weaponSwitch !== -1) {
+      this.player.switchWeapon(this.inputHandler.weaponSwitch as WeaponType);
+      this.inputHandler.weaponSwitch = -1;
+    }
 
     // Handle shooting
     if (this.inputHandler.isMouseDown && this.player.canShoot()) {
@@ -186,8 +213,16 @@ export class Game {
 
       if (!enemy.isAlive()) {
         const enemyPosition = enemy.getPosition();
+        const enemyType = enemy.getType();
         this.enemies.splice(i, 1);
-        this.ui.addScore(100);
+
+        // Award points based on enemy type
+        const score = enemyType === EnemyType.BASIC ? 50 :
+                     enemyType === EnemyType.MEDIUM ? 100 : 200;
+        this.ui.addScore(score);
+
+        // Always drop a random weapon
+        this.spawnWeaponPickup(enemyPosition);
 
         // Chance to drop ammo
         if (Math.random() < this.ammoDropChance) {
@@ -200,9 +235,7 @@ export class Game {
         }
 
         // Spawn new enemy
-        const newEnemy = new Enemy(this.scene, this.maze);
-        const spawnPos = this.maze.getRandomWalkablePosition();
-        newEnemy.setPosition(spawnPos.x, 0, spawnPos.z);
+        const newEnemy = this.spawnRandomEnemy();
         this.enemies.push(newEnemy);
       } else {
         // Check if enemy hits player
@@ -227,7 +260,10 @@ export class Game {
       // Check if player collected the pickup
       const distance = pickup.getPosition().distanceTo(this.player.getPosition());
       if (distance < 1.5) {
-        this.player.addAmmo(30);
+        // Add ammo to current weapon
+        const inventory = this.player.getWeaponInventory();
+        const currentWeapon = inventory.getCurrentWeapon();
+        inventory.addAmmo(currentWeapon, 30);
         pickup.destroy();
         this.ammoPickups.splice(i, 1);
       }
@@ -248,8 +284,33 @@ export class Game {
       }
     }
 
+    // Update weapon pickups
+    for (let i = this.weaponPickups.length - 1; i >= 0; i--) {
+      const pickup = this.weaponPickups[i];
+      pickup.update(delta);
+
+      // Check if player collected the pickup
+      const distance = pickup.getPosition().distanceTo(this.player.getPosition());
+      if (distance < 1.5) {
+        const weaponType = pickup.getWeaponType();
+        const inventory = this.player.getWeaponInventory();
+
+        // If player already has the weapon, add ammo; otherwise add the weapon
+        if (inventory.getOwnedWeapons().includes(weaponType)) {
+          const weaponData = inventory.getCurrentWeaponData();
+          inventory.addAmmo(weaponType, weaponData.maxAmmo);
+        } else {
+          const weaponData = inventory.getCurrentWeaponData();
+          this.player.addWeapon(weaponType, weaponData.maxAmmo);
+        }
+
+        pickup.destroy();
+        this.weaponPickups.splice(i, 1);
+      }
+    }
+
     // Update UI
-    this.ui.updateAmmo(this.player.getAmmo(), this.player.getMaxAmmo());
+    this.ui.updateWeapons(this.player.getWeaponInventory());
 
     this.renderer.render(this.scene, this.camera);
   };
@@ -272,7 +333,9 @@ export class Game {
       // Only damage enemy if it's the first thing we hit (not blocked by wall/door)
       const hitEnemy = this.enemies.find(e => e.getMesh() === hitObject);
       if (hitEnemy) {
-        hitEnemy.takeDamage(34);
+        // Get damage from current weapon
+        const damage = this.player.getWeaponInventory().getCurrentWeaponData().damage;
+        hitEnemy.takeDamage(damage);
       }
       // If we hit a wall or door first, bullet is blocked (no damage)
     }
@@ -286,6 +349,30 @@ export class Game {
   private spawnHealthPickup(position: THREE.Vector3): void {
     const pickup = new HealthPickup(this.scene, position);
     this.healthPickups.push(pickup);
+  }
+
+  private spawnWeaponPickup(position: THREE.Vector3): void {
+    // Randomly select a weapon type
+    const weaponTypes = [
+      WeaponType.PISTOL,
+      WeaponType.SHOTGUN,
+      WeaponType.RIFLE,
+      WeaponType.SNIPER,
+      WeaponType.ROCKET
+    ];
+    const randomWeapon = weaponTypes[Math.floor(Math.random() * weaponTypes.length)];
+    const pickup = new WeaponPickup(this.scene, position, randomWeapon);
+    this.weaponPickups.push(pickup);
+  }
+
+  private spawnAmmoCaches(): void {
+    // Spawn 8-12 random ammo pickups throughout the maze
+    const ammoCount = Math.floor(Math.random() * 5) + 8;
+    for (let i = 0; i < ammoCount; i++) {
+      const position = this.maze.getRandomWalkablePosition();
+      position.y = 0.5; // Slightly above ground
+      this.spawnAmmoPickup(position);
+    }
   }
 
   private interactWithNearbyDoor(): void {

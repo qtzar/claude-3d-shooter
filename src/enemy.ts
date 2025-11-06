@@ -1,11 +1,45 @@
 import * as THREE from 'three';
 import { Maze } from './maze';
 
+export enum EnemyType {
+  BASIC = 0,   // 3 hits with rifle (60 health)
+  MEDIUM = 1,  // 5 hits with rifle (100 health)
+  HARD = 2     // 10 hits with rifle (200 health)
+}
+
+interface EnemyConfig {
+  health: number;
+  speed: number;
+  color: number;
+  scale: number;
+}
+
+const ENEMY_CONFIGS: Record<EnemyType, EnemyConfig> = {
+  [EnemyType.BASIC]: {
+    health: 60,
+    speed: 2,
+    color: 0x808080, // Grey
+    scale: 0.9
+  },
+  [EnemyType.MEDIUM]: {
+    health: 100,
+    speed: 2.5,
+    color: 0xff8800, // Orange
+    scale: 1.0
+  },
+  [EnemyType.HARD]: {
+    health: 200,
+    speed: 3,
+    color: 0x880000, // Dark red
+    scale: 1.2
+  }
+};
+
 export class Enemy {
   private mesh: THREE.Mesh;
-  private health: number = 100;
-  private maxHealth: number = 100;
-  private speed: number = 2;
+  private health: number;
+  private maxHealth: number;
+  private speed: number;
   private attackCooldown: number = 1; // seconds
   private lastAttackTime: number = 0;
   private scene: THREE.Scene;
@@ -17,11 +51,21 @@ export class Enemy {
   private lastKnownPlayerPosition: THREE.Vector3 | null = null;
   private patrolDirection: THREE.Vector3;
   private patrolChangeTimer: number = 0;
+  private enemyType: EnemyType;
+  private baseColor: number;
 
-  constructor(scene: THREE.Scene, maze: Maze) {
+  constructor(scene: THREE.Scene, maze: Maze, type: EnemyType = EnemyType.MEDIUM) {
     this.scene = scene;
     this.maze = maze;
     this.raycaster = new THREE.Raycaster();
+    this.enemyType = type;
+
+    // Get config for this enemy type
+    const config = ENEMY_CONFIGS[type];
+    this.health = config.health;
+    this.maxHealth = config.health;
+    this.speed = config.speed;
+    this.baseColor = config.color;
 
     // Initialize random patrol direction
     this.patrolDirection = new THREE.Vector3(
@@ -31,9 +75,9 @@ export class Enemy {
     ).normalize();
 
     // Create enemy mesh (simple colored cube/capsule)
-    const geometry = new THREE.CapsuleGeometry(0.5, 1, 4, 8);
+    const geometry = new THREE.CapsuleGeometry(0.5 * config.scale, 1 * config.scale, 4, 8);
     const material = new THREE.MeshStandardMaterial({
-      color: 0xff0000,
+      color: config.color,
       roughness: 0.7,
       metalness: 0.3
     });
@@ -42,9 +86,9 @@ export class Enemy {
     this.mesh.receiveShadow = true;
 
     // Add a simple "head" to make it look more character-like
-    const headGeometry = new THREE.SphereGeometry(0.3, 8, 8);
+    const headGeometry = new THREE.SphereGeometry(0.3 * config.scale, 8, 8);
     const head = new THREE.Mesh(headGeometry, material);
-    head.position.y = 1;
+    head.position.y = 1 * config.scale;
     this.mesh.add(head);
 
     scene.add(this.mesh);
@@ -69,7 +113,7 @@ export class Enemy {
       direction.normalize();
       targetPosition = playerPosition;
 
-      // Change color to indicate alert state
+      // Change emissive to indicate alert state (keep base color)
       const material = this.mesh.material as THREE.MeshStandardMaterial;
       material.emissive.setHex(0xff0000);
       material.emissiveIntensity = 0.3;
@@ -224,5 +268,9 @@ export class Enemy {
 
   public getPosition(): THREE.Vector3 {
     return this.mesh.position.clone();
+  }
+
+  public getType(): EnemyType {
+    return this.enemyType;
   }
 }

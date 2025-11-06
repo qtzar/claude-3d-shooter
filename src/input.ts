@@ -12,6 +12,7 @@ export class InputHandler {
   public isMouseDown = false;
   public isReloading = false;
   public isInteracting = false;
+  public weaponSwitch: number = -1; // -1 = no switch, 0-4 = weapon index
   private canvas: HTMLCanvasElement;
 
   constructor(canvas: HTMLCanvasElement) {
@@ -85,6 +86,21 @@ export class InputHandler {
         break;
       case 'KeyE':
         this.isInteracting = true;
+        break;
+      case 'Digit1':
+        this.weaponSwitch = 0;
+        break;
+      case 'Digit2':
+        this.weaponSwitch = 1;
+        break;
+      case 'Digit3':
+        this.weaponSwitch = 2;
+        break;
+      case 'Digit4':
+        this.weaponSwitch = 3;
+        break;
+      case 'Digit5':
+        this.weaponSwitch = 4;
         break;
       case 'Escape':
         if (document.pointerLockElement === this.canvas) {

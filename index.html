@@ -72,6 +72,52 @@
         border-radius: 5px;
       }
 
+      #weapons {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 10px;
+      }
+
+      .weapon-slot {
+        width: 80px;
+        height: 100px;
+        background: rgba(0, 0, 0, 0.7);
+        border: 2px solid #444;
+        border-radius: 5px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 5px;
+      }
+
+      .weapon-slot.active {
+        border-color: #ffcc00;
+        box-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+      }
+
+      .weapon-slot.locked {
+        opacity: 0.3;
+      }
+
+      .weapon-name {
+        font-size: 12px;
+        margin-bottom: 5px;
+      }
+
+      .weapon-ammo {
+        font-size: 14px;
+        font-weight: bold;
+      }
+
+      .weapon-number {
+        font-size: 10px;
+        color: #888;
+      }
+
       #instructions {
         position: absolute;
         top: 50%;
@@ -112,8 +158,13 @@
 
       <div id="stats">
         <div>Health: <span id="health">100</span></div>
-        <div>Ammo: <span id="ammo">30</span></div>
+        <div>Weapon: <span id="weapon-name">Pistol</span></div>
+        <div>Ammo: <span id="ammo">50</span></div>
         <div>Score: <span id="score">0</span></div>
+      </div>
+
+      <div id="weapons">
+        <!-- Weapon slots will be populated by JavaScript -->
       </div>
 
       <div id="instructions">
@@ -122,6 +173,7 @@
         <p>Mouse - Look Around</p>
         <p>Left Click - Shoot</p>
         <p>E - Open/Close Doors</p>
+        <p>1-5 - Switch Weapons</p>
         <p>R - Reload</p>
         <p>ESC - Pause</p>
         <button id="start-button">Click to Start</button>

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { InputHandler } from './input';
 import { Maze } from './maze';
+import { WeaponInventory, WeaponType } from './weapon';
 
 export class Player {
   private camera: THREE.PerspectiveCamera;
@@ -8,10 +9,7 @@ export class Player {
   private position: THREE.Vector3;
   private health: number = 100;
   private maxHealth: number = 100;
-  private ammo: number = 30;
-  private maxAmmo: number = 30;
-  private lastShotTime: number = 0;
-  private shootCooldown: number = 0.1; // seconds
+  private weapons: WeaponInventory;
   private moveSpeed: number = 5;
   private mouseSensitivity: number = 0.002;
   private collisionRadius: number = 0.5;
@@ -24,6 +22,7 @@ export class Player {
     this.camera = camera;
     this.maze = maze;
     this.velocity = new THREE.Vector3();
+    this.weapons = new WeaponInventory();
 
     // Spawn in a walkable position
     const spawnPos = maze.getRandomWalkablePosition();
@@ -95,23 +94,27 @@ export class Player {
   }
 
   public canShoot(): boolean {
-    const currentTime = performance.now() / 1000;
-    return this.ammo > 0 && (currentTime - this.lastShotTime) >= this.shootCooldown;
+    return this.weapons.canShoot();
   }
 
-  public shoot(): void {
-    if (this.canShoot()) {
-      this.ammo--;
-      this.lastShotTime = performance.now() / 1000;
-    }
+  public shoot(): number {
+    return this.weapons.shoot();
   }
 
   public reload(): void {
-    this.ammo = this.maxAmmo;
+    this.weapons.reload();
   }
 
-  public addAmmo(amount: number): void {
-    this.ammo = Math.min(this.maxAmmo, this.ammo + amount);
+  public switchWeapon(type: WeaponType): boolean {
+    return this.weapons.switchWeapon(type);
+  }
+
+  public addWeapon(type: WeaponType, ammo: number): void {
+    this.weapons.addWeapon(type, ammo);
+  }
+
+  public getWeaponInventory(): WeaponInventory {
+    return this.weapons;
   }
 
   public takeDamage(amount: number): void {
@@ -124,14 +127,6 @@ export class Player {
 
   public getHealth(): number {
     return this.health;
-  }
-
-  public getAmmo(): number {
-    return this.ammo;
-  }
-
-  public getMaxAmmo(): number {
-    return this.maxAmmo;
   }
 
   public getPosition(): THREE.Vector3 {
