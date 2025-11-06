@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D Shooter Game</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+      }
+
+      #game-canvas {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+      }
+
+      #ui {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        color: white;
+        font-size: 18px;
+      }
+
+      #crosshair {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 20px;
+        height: 20px;
+      }
+
+      #crosshair::before,
+      #crosshair::after {
+        content: '';
+        position: absolute;
+        background: white;
+      }
+
+      #crosshair::before {
+        width: 2px;
+        height: 20px;
+        left: 9px;
+        top: 0;
+      }
+
+      #crosshair::after {
+        width: 20px;
+        height: 2px;
+        left: 0;
+        top: 9px;
+      }
+
+      #stats {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background: rgba(0, 0, 0, 0.5);
+        padding: 15px;
+        border-radius: 5px;
+      }
+
+      #instructions {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.8);
+        padding: 30px;
+        border-radius: 10px;
+        text-align: center;
+        pointer-events: all;
+      }
+
+      #instructions.hidden {
+        display: none;
+      }
+
+      #instructions button {
+        margin-top: 20px;
+        padding: 10px 30px;
+        font-size: 18px;
+        cursor: pointer;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+      }
+
+      #instructions button:hover {
+        background: #45a049;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="game-canvas"></canvas>
+
+    <div id="ui">
+      <div id="crosshair"></div>
+
+      <div id="stats">
+        <div>Health: <span id="health">100</span></div>
+        <div>Ammo: <span id="ammo">30</span></div>
+        <div>Score: <span id="score">0</span></div>
+      </div>
+
+      <div id="instructions">
+        <h2>3D Shooter Game</h2>
+        <p>WASD - Move</p>
+        <p>Mouse - Look Around</p>
+        <p>Left Click - Shoot</p>
+        <p>E - Open/Close Doors</p>
+        <p>R - Reload</p>
+        <p>ESC - Pause</p>
+        <button id="start-button">Click to Start</button>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
