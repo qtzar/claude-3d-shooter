@@ -133,6 +133,12 @@ export class Player {
     return this.position.clone();
   }
 
+  public setPosition(x: number, z: number): void {
+    this.position.x = x;
+    this.position.z = z;
+    this.camera.position.copy(this.position);
+  }
+
   public getDirection(): THREE.Vector3 {
     const direction = new THREE.Vector3(0, 0, -1);
     direction.applyQuaternion(this.camera.quaternion);
