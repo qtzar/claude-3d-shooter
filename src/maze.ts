@@ -9,6 +9,8 @@ export class Maze {
   private walls: THREE.Mesh[] = [];
   private grid: number[][] = [];
   private doors: Door[] = [];
+  private decorations: THREE.Object3D[] = [];
+  private lights: THREE.Light[] = [];
 
   constructor(scene: THREE.Scene) {
     this.scene = scene;
@@ -251,6 +253,7 @@ export class Maze {
       stick.position.copy(torchPos);
       stick.castShadow = true;
       this.scene.add(stick);
+      this.decorations.push(stick);
 
       // Flame
       const flameGeometry = new THREE.SphereGeometry(0.15, 8, 8);
@@ -263,12 +266,14 @@ export class Maze {
       flame.position.copy(torchPos);
       flame.position.y += 0.3;
       this.scene.add(flame);
+      this.decorations.push(flame);
 
       // Point light for torch
       const light = new THREE.PointLight(0xff8844, 0.8, 10);
       light.position.copy(flame.position);
       light.castShadow = false; // Disable shadows on torch lights to save performance
       this.scene.add(light);
+      this.lights.push(light);
 
       return true;
     }
@@ -287,6 +292,7 @@ export class Maze {
     barrel.castShadow = true;
     barrel.receiveShadow = true;
     this.scene.add(barrel);
+    this.decorations.push(barrel);
 
     // Add metal rings
     const ringGeometry = new THREE.TorusGeometry(0.32, 0.03, 8, 12);
@@ -300,12 +306,14 @@ export class Maze {
     ring1.position.y += 0.2;
     ring1.rotation.x = Math.PI / 2;
     this.scene.add(ring1);
+    this.decorations.push(ring1);
 
     const ring2 = new THREE.Mesh(ringGeometry, ringMaterial);
     ring2.position.copy(barrel.position);
     ring2.position.y -= 0.2;
     ring2.rotation.x = Math.PI / 2;
     this.scene.add(ring2);
+    this.decorations.push(ring2);
   }
 
   private addPillar(posX: number, posZ: number): void {
@@ -320,6 +328,7 @@ export class Maze {
     pillar.castShadow = true;
     pillar.receiveShadow = true;
     this.scene.add(pillar);
+    this.decorations.push(pillar);
 
     // Add capital (top decoration)
     const capitalGeometry = new THREE.CylinderGeometry(0.25, 0.2, 0.1, 8);
@@ -328,6 +337,7 @@ export class Maze {
     capital.position.y += 0.8;
     capital.castShadow = true;
     this.scene.add(capital);
+    this.decorations.push(capital);
   }
 
   public checkCollision(position: THREE.Vector3, radius: number = 0.5): boolean {
@@ -471,5 +481,23 @@ export class Maze {
 
     // If we can't find a safe position after many attempts, just return a walkable position
     return this.getRandomWalkablePosition();
+  }
+
+  public cleanup(): void {
+    // Remove all walls
+    this.walls.forEach(wall => this.scene.remove(wall));
+    this.walls = [];
+
+    // Remove all doors
+    this.doors.forEach(door => door.remove());
+    this.doors = [];
+
+    // Remove all decorations (torches, barrels, pillars)
+    this.decorations.forEach(decoration => this.scene.remove(decoration));
+    this.decorations = [];
+
+    // Remove all lights
+    this.lights.forEach(light => this.scene.remove(light));
+    this.lights = [];
   }
 }

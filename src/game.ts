@@ -491,11 +491,10 @@ export class Game {
       this.keyPickup = null;
     }
 
-    // Regenerate maze
-    this.scene.remove(this.maze.getWalls()[0]?.parent || this.maze.getWalls()[0]);
-    this.maze.getWalls().forEach(wall => this.scene.remove(wall));
-    this.maze.getDoors().forEach(door => door.remove());
+    // Clean up old maze
+    this.maze.cleanup();
 
+    // Regenerate maze
     this.maze = new Maze(this.scene);
 
     // Respawn player at new safe position
