@@ -25,10 +25,11 @@ export class SoundManager {
   }
 
   // Resume audio context (needed for browser autoplay policies)
-  public resume(): void {
+  public async resume(): Promise<void> {
     if (this.audioContext.state === 'suspended') {
-      this.audioContext.resume();
+      await this.audioContext.resume();
     }
+    console.log('Audio context state:', this.audioContext.state);
   }
 
   // Weapon sounds - different for each weapon type

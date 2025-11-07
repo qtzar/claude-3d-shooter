@@ -182,10 +182,10 @@ export class Game {
     return enemy;
   }
 
-  public start(): void {
+  public async start(): Promise<void> {
     this.isRunning = true;
     this.inputHandler.lockPointer();
-    this.soundManager.resume(); // Resume audio context
+    await this.soundManager.resume(); // Resume audio context
     this.soundManager.startBackgroundMusic();
     this.animate();
   }
