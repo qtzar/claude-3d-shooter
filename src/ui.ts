@@ -12,6 +12,8 @@ export class UI {
   private weaponsContainer: HTMLElement;
   private minimapCanvas: HTMLCanvasElement;
   private minimapCtx: CanvasRenderingContext2D;
+  private fadeOverlay: HTMLElement;
+  private levelText: HTMLElement;
   private score: number = 0;
 
   constructor() {
@@ -24,6 +26,8 @@ export class UI {
     this.weaponsContainer = document.getElementById('weapons')!;
     this.minimapCanvas = document.getElementById('minimap') as HTMLCanvasElement;
     this.minimapCtx = this.minimapCanvas.getContext('2d')!;
+    this.fadeOverlay = document.getElementById('fade-overlay')!;
+    this.levelText = document.getElementById('level-text')!;
 
     this.initializeWeaponSlots();
   }
@@ -248,5 +252,32 @@ export class UI {
     ctx.fill();
 
     ctx.restore();
+  }
+
+  public async fadeTransition(newLevel: number, onTransition: () => void): Promise<void> {
+    // Fade out
+    this.fadeOverlay.classList.add('active');
+
+    // Wait for fade out to complete
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Show level text
+    this.levelText.textContent = `Level ${newLevel}`;
+    this.levelText.classList.add('active');
+
+    // Execute the transition (regenerate maze, etc.)
+    onTransition();
+
+    // Wait a moment to show level text
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    // Hide level text
+    this.levelText.classList.remove('active');
+
+    // Wait for text fade
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    // Fade in
+    this.fadeOverlay.classList.remove('active');
   }
 }

@@ -372,7 +372,7 @@ export class Game {
       const distance = this.keyPickup.getPosition().distanceTo(this.player.getPosition());
       if (distance < 1.5) {
         this.soundManager.playPickup();
-        this.nextLevel();
+        this.transitionToNextLevel();
       }
     }
 
@@ -472,9 +472,18 @@ export class Game {
     this.keyPickup = new KeyPickup(this.scene, keyPos);
   }
 
-  private nextLevel(): void {
+  private async transitionToNextLevel(): Promise<void> {
     // Increment level
     this.level++;
+
+    // Use fade transition
+    await this.ui.fadeTransition(this.level, () => {
+      this.regenerateLevel();
+    });
+  }
+
+  private regenerateLevel(): void {
+    // Update difficulty
     this.difficultyMultiplier = 1.0 + (this.level - 1) * 0.1;
 
     // Clear current game state
@@ -508,7 +517,6 @@ export class Game {
 
     // Update UI
     this.ui.updateLevel(this.level);
-    this.soundManager.playPickup(); // Play sound for level completion
   }
 
   private interactWithNearbyDoor(): void {
