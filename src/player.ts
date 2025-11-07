@@ -139,6 +139,10 @@ export class Player {
     this.camera.position.copy(this.position);
   }
 
+  public setMaze(maze: Maze): void {
+    this.maze = maze;
+  }
+
   public getDirection(): THREE.Vector3 {
     const direction = new THREE.Vector3(0, 0, -1);
     direction.applyQuaternion(this.camera.quaternion);

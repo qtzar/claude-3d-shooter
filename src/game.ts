@@ -33,6 +33,7 @@ export class Game {
   private keyPickup: KeyPickup | null = null;
   private level: number = 1;
   private difficultyMultiplier: number = 1.0;
+  private isTransitioning: boolean = false;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -367,11 +368,12 @@ export class Game {
     }
 
     // Check key collision
-    if (this.keyPickup) {
+    if (this.keyPickup && !this.isTransitioning) {
       this.keyPickup.update(delta);
       const distance = this.keyPickup.getPosition().distanceTo(this.player.getPosition());
       if (distance < 1.5) {
         this.soundManager.playPickup();
+        this.isTransitioning = true;
         this.transitionToNextLevel();
       }
     }
@@ -480,6 +482,9 @@ export class Game {
     await this.ui.fadeTransition(this.level, () => {
       this.regenerateLevel();
     });
+
+    // Re-enable transitions
+    this.isTransitioning = false;
   }
 
   private regenerateLevel(): void {
@@ -505,6 +510,9 @@ export class Game {
 
     // Regenerate maze
     this.maze = new Maze(this.scene);
+
+    // Update player's maze reference for collision detection
+    this.player.setMaze(this.maze);
 
     // Respawn player at new safe position
     const newPlayerPos = this.maze.getSafeSpawnPosition();
