@@ -176,4 +176,8 @@ export class Door {
   public getDistanceTo(position: THREE.Vector3): number {
     return this.position.distanceTo(position);
   }
+
+  public remove(): void {
+    this.scene.remove(this.frameGroup);
+  }
 }
