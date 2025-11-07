@@ -380,9 +380,10 @@ export class Maze {
           if (isHorizontalCorridor || isVerticalCorridor) {
             const posX = x * this.cellSize - offsetX + this.cellSize / 2;
             const posZ = z * this.cellSize - offsetZ + this.cellSize / 2;
-            // Horizontal corridor = door blocks left/right, so rotation = 0
-            // Vertical corridor = door blocks up/down, so rotation = 90 degrees
-            const rotation = isHorizontalCorridor ? 0 : Math.PI / 2;
+            // Door frame spans along X axis by default
+            // Horizontal corridor (runs left-right) needs rotation = 90° to span across
+            // Vertical corridor (runs up-down) needs rotation = 0° (no rotation)
+            const rotation = isHorizontalCorridor ? Math.PI / 2 : 0;
 
             const door = new Door(
               this.scene,
