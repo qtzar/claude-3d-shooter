@@ -7,6 +7,7 @@ export class UI {
   private healthBarElement: HTMLElement;
   private ammoElement: HTMLElement;
   private scoreElement: HTMLElement;
+  private levelElement: HTMLElement;
   private weaponNameElement: HTMLElement;
   private weaponsContainer: HTMLElement;
   private minimapCanvas: HTMLCanvasElement;
@@ -18,6 +19,7 @@ export class UI {
     this.healthBarElement = document.getElementById('health-bar')!;
     this.ammoElement = document.getElementById('ammo')!;
     this.scoreElement = document.getElementById('score')!;
+    this.levelElement = document.getElementById('level')!;
     this.weaponNameElement = document.getElementById('weapon-name')!;
     this.weaponsContainer = document.getElementById('weapons')!;
     this.minimapCanvas = document.getElementById('minimap') as HTMLCanvasElement;
@@ -109,7 +111,11 @@ export class UI {
     return this.score;
   }
 
-  public updateMinimap(playerPos: THREE.Vector3, playerYaw: number, enemyPositions: THREE.Vector3[], maze: Maze): void {
+  public updateLevel(level: number): void {
+    this.levelElement.textContent = level.toString();
+  }
+
+  public updateMinimap(playerPos: THREE.Vector3, playerYaw: number, enemyPositions: THREE.Vector3[], maze: Maze, keyPos?: THREE.Vector3): void {
     const ctx = this.minimapCtx;
     const size = 150;
     const center = size / 2;
@@ -196,6 +202,34 @@ export class UI {
       ctx.beginPath();
       ctx.arc(canvasX, canvasY, 3, 0, Math.PI * 2);
       ctx.fill();
+    }
+
+    // Draw key if present
+    if (keyPos) {
+      const relX = keyPos.x - playerPos.x;
+      const relZ = keyPos.z - playerPos.z;
+
+      // Check if key is within range
+      if (Math.abs(relX) <= range && Math.abs(relZ) <= range) {
+        // Rotate relative to player's yaw
+        const cos = Math.cos(playerYaw);
+        const sin = Math.sin(playerYaw);
+        const rotX = relX * cos - relZ * sin;
+        const rotZ = relX * sin + relZ * cos;
+
+        // Convert to canvas coordinates
+        const canvasX = center + rotX * scale;
+        const canvasY = center + rotZ * scale;
+
+        // Draw silver key dot with glow
+        ctx.fillStyle = '#c0c0c0';
+        ctx.shadowColor = '#ffffff';
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(canvasX, canvasY, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
     }
 
     // Draw player (cyan triangle pointing forward)

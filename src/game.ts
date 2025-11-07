@@ -9,6 +9,7 @@ import { Maze } from './maze';
 import { WeaponPickup } from './weapon-pickup';
 import { WeaponType } from './weapon';
 import { SoundManager } from './sound';
+import { KeyPickup } from './key-pickup';
 
 export class Game {
   private scene: THREE.Scene;
@@ -29,6 +30,9 @@ export class Game {
   private ammoDropChance: number = 0.3; // 30% chance to drop ammo when enemy dies
   private healthDropChance: number = 0.2; // 20% chance to drop health when enemy dies
   private maze: Maze;
+  private keyPickup: KeyPickup | null = null;
+  private level: number = 1;
+  private difficultyMultiplier: number = 1.0;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -67,6 +71,8 @@ export class Game {
     this.setupEnvironment();
     this.spawnEnemies();
     this.spawnAmmoCaches();
+    this.spawnKey();
+    this.ui.updateLevel(this.level);
   }
 
   private setupLights(): void {
@@ -160,7 +166,7 @@ export class Game {
       type = EnemyType.HARD;
     }
 
-    const enemy = new Enemy(this.scene, this.maze, type);
+    const enemy = new Enemy(this.scene, this.maze, type, this.difficultyMultiplier);
 
     // Find a safe spawn position (away from doors and player)
     let spawnPos: THREE.Vector3;
@@ -360,12 +366,23 @@ export class Game {
       }
     }
 
+    // Check key collision
+    if (this.keyPickup) {
+      this.keyPickup.update(delta);
+      const distance = this.keyPickup.getPosition().distanceTo(playerPosition);
+      if (distance < 1.5) {
+        this.soundManager.playPickup();
+        this.nextLevel();
+      }
+    }
+
     // Update UI
     this.ui.updateWeapons(this.player.getWeaponInventory());
 
     // Update minimap
     const enemyPositions = this.enemies.map(e => e.getPosition());
-    this.ui.updateMinimap(this.player.getPosition(), this.player.getYaw(), enemyPositions, this.maze);
+    const keyPos = this.keyPickup?.getPosition();
+    this.ui.updateMinimap(this.player.getPosition(), this.player.getYaw(), enemyPositions, this.maze, keyPos);
 
     this.renderer.render(this.scene, this.camera);
   };
@@ -429,6 +446,70 @@ export class Game {
       position.y = 0.5; // Slightly above ground
       this.spawnAmmoPickup(position);
     }
+  }
+
+  private spawnKey(): void {
+    // Spawn key far from player spawn position
+    const playerPos = this.player.getPosition();
+    let keyPos: THREE.Vector3;
+    let maxAttempts = 50;
+    let bestPos: THREE.Vector3 | null = null;
+    let maxDistance = 0;
+
+    // Find the furthest walkable position from player
+    for (let i = 0; i < maxAttempts; i++) {
+      const pos = this.maze.getRandomWalkablePosition();
+      const distance = pos.distanceTo(playerPos);
+
+      if (distance > maxDistance) {
+        maxDistance = distance;
+        bestPos = pos;
+      }
+    }
+
+    keyPos = bestPos || this.maze.getRandomWalkablePosition();
+    keyPos.y = 1.5; // Float above ground
+    this.keyPickup = new KeyPickup(this.scene, keyPos);
+  }
+
+  private nextLevel(): void {
+    // Increment level
+    this.level++;
+    this.difficultyMultiplier = 1.0 + (this.level - 1) * 0.1;
+
+    // Clear current game state
+    this.enemies.forEach(enemy => enemy.isAlive() && this.scene.remove(enemy.getMesh()));
+    this.enemies = [];
+    this.ammoPickups.forEach(pickup => pickup.remove());
+    this.ammoPickups = [];
+    this.healthPickups.forEach(pickup => pickup.remove());
+    this.healthPickups = [];
+    this.weaponPickups.forEach(pickup => pickup.remove());
+    this.weaponPickups = [];
+    if (this.keyPickup) {
+      this.keyPickup.remove();
+      this.keyPickup = null;
+    }
+
+    // Regenerate maze
+    this.scene.remove(this.maze.getWalls()[0]?.parent || this.maze.getWalls()[0]);
+    this.maze.getWalls().forEach(wall => this.scene.remove(wall));
+    this.maze.getDoors().forEach(door => door.remove());
+
+    this.maze = new Maze(this.scene);
+
+    // Respawn player at new safe position
+    const newPlayerPos = this.maze.getSafeSpawnPosition();
+    this.player.setPosition(newPlayerPos.x, newPlayerPos.z);
+
+    // Respawn enemies and pickups
+    this.spawnEnemies();
+    this.spawnAmmoCaches();
+    this.spawnKey();
+
+    // Update UI
+    this.ui.updateLevel(this.level);
+    this.soundManager.playPickup(); // Play sound for level completion
   }
 
   private interactWithNearbyDoor(): void {

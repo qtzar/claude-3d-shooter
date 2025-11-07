@@ -55,17 +55,17 @@ export class Enemy {
   private enemyType: EnemyType;
   private baseColor: number;
 
-  constructor(scene: THREE.Scene, maze: Maze, type: EnemyType = EnemyType.MEDIUM) {
+  constructor(scene: THREE.Scene, maze: Maze, type: EnemyType = EnemyType.MEDIUM, difficultyMultiplier: number = 1.0) {
     this.scene = scene;
     this.maze = maze;
     this.raycaster = new THREE.Raycaster();
     this.enemyType = type;
 
-    // Get config for this enemy type
+    // Get config for this enemy type and apply difficulty scaling
     const config = ENEMY_CONFIGS[type];
-    this.health = config.health;
-    this.maxHealth = config.health;
-    this.speed = config.speed;
+    this.health = Math.floor(config.health * difficultyMultiplier);
+    this.maxHealth = Math.floor(config.health * difficultyMultiplier);
+    this.speed = config.speed * Math.min(difficultyMultiplier, 1.5); // Cap speed at 1.5x
     this.baseColor = config.color;
 
     // Initialize random patrol direction
