@@ -480,11 +480,11 @@ export class Game {
     // Clear current game state
     this.enemies.forEach(enemy => enemy.isAlive() && this.scene.remove(enemy.getMesh()));
     this.enemies = [];
-    this.ammoPickups.forEach(pickup => pickup.remove());
+    this.ammoPickups.forEach(pickup => pickup.destroy());
     this.ammoPickups = [];
-    this.healthPickups.forEach(pickup => pickup.remove());
+    this.healthPickups.forEach(pickup => pickup.destroy());
     this.healthPickups = [];
-    this.weaponPickups.forEach(pickup => pickup.remove());
+    this.weaponPickups.forEach(pickup => pickup.destroy());
     this.weaponPickups = [];
     if (this.keyPickup) {
       this.keyPickup.remove();
