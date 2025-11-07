@@ -72,6 +72,34 @@
         border-radius: 5px;
       }
 
+      #health-bar-container {
+        width: 200px;
+        height: 25px;
+        background: rgba(0, 0, 0, 0.8);
+        border: 2px solid #444;
+        border-radius: 3px;
+        margin-bottom: 10px;
+        overflow: hidden;
+      }
+
+      #health-bar {
+        height: 100%;
+        background: #00ff00;
+        transition: width 0.3s ease, background-color 0.3s ease;
+      }
+
+      #health-bar.low {
+        background: #ff0000;
+      }
+
+      #health-bar.medium {
+        background: #ffff00;
+      }
+
+      #health-bar.high {
+        background: #00ff00;
+      }
+
       #weapons {
         position: absolute;
         bottom: 20px;
@@ -157,6 +185,9 @@
       <div id="crosshair"></div>
 
       <div id="stats">
+        <div id="health-bar-container">
+          <div id="health-bar" style="width: 100%;"></div>
+        </div>
         <div>Health: <span id="health">100</span></div>
         <div>Weapon: <span id="weapon-name">Pistol</span></div>
         <div>Ammo: <span id="ammo">50</span></div>

@@ -2,6 +2,7 @@ import { WeaponInventory, WeaponType, WEAPONS } from './weapon';
 
 export class UI {
   private healthElement: HTMLElement;
+  private healthBarElement: HTMLElement;
   private ammoElement: HTMLElement;
   private scoreElement: HTMLElement;
   private weaponNameElement: HTMLElement;
@@ -10,6 +11,7 @@ export class UI {
 
   constructor() {
     this.healthElement = document.getElementById('health')!;
+    this.healthBarElement = document.getElementById('health-bar')!;
     this.ammoElement = document.getElementById('ammo')!;
     this.scoreElement = document.getElementById('score')!;
     this.weaponNameElement = document.getElementById('weapon-name')!;
@@ -71,7 +73,25 @@ export class UI {
   }
 
   public updateHealth(health: number): void {
-    this.healthElement.textContent = Math.max(0, health).toString();
+    const clampedHealth = Math.max(0, health);
+    this.healthElement.textContent = clampedHealth.toString();
+
+    // Update health bar width (percentage of max health 100)
+    const healthPercentage = (clampedHealth / 100) * 100;
+    this.healthBarElement.style.width = `${healthPercentage}%`;
+
+    // Update health bar color based on percentage
+    // Remove all color classes first
+    this.healthBarElement.classList.remove('low', 'medium', 'high');
+
+    // Add appropriate color class
+    if (healthPercentage < 20) {
+      this.healthBarElement.classList.add('low'); // Red
+    } else if (healthPercentage < 50) {
+      this.healthBarElement.classList.add('medium'); // Yellow
+    } else {
+      this.healthBarElement.classList.add('high'); // Green
+    }
   }
 
   public addScore(points: number): void {
