@@ -37,6 +37,7 @@ const ENEMY_CONFIGS: Record<EnemyType, EnemyConfig> = {
 
 export class Enemy {
   private mesh: THREE.Mesh;
+  private headMesh: THREE.Mesh;
   private health: number;
   private maxHealth: number;
   private speed: number;
@@ -86,10 +87,16 @@ export class Enemy {
     this.mesh.receiveShadow = true;
 
     // Add a simple "head" to make it look more character-like
+    // Head gets its own material so we can change its color independently
     const headGeometry = new THREE.SphereGeometry(0.3 * config.scale, 8, 8);
-    const head = new THREE.Mesh(headGeometry, material);
-    head.position.y = 1 * config.scale;
-    this.mesh.add(head);
+    const headMaterial = new THREE.MeshStandardMaterial({
+      color: config.color,
+      roughness: 0.7,
+      metalness: 0.3
+    });
+    this.headMesh = new THREE.Mesh(headGeometry, headMaterial);
+    this.headMesh.position.y = 1 * config.scale;
+    this.mesh.add(this.headMesh);
 
     scene.add(this.mesh);
   }
@@ -113,10 +120,10 @@ export class Enemy {
       direction.normalize();
       targetPosition = playerPosition;
 
-      // Change emissive to indicate alert state (keep base color)
-      const material = this.mesh.material as THREE.MeshStandardMaterial;
-      material.emissive.setHex(0xff0000);
-      material.emissiveIntensity = 0.3;
+      // Change head emissive to indicate alert state (keep body at base color)
+      const headMaterial = this.headMesh.material as THREE.MeshStandardMaterial;
+      headMaterial.emissive.setHex(0xff0000);
+      headMaterial.emissiveIntensity = 0.5;
     } else if (this.lastKnownPlayerPosition) {
       // Move to last known position
       direction.subVectors(this.lastKnownPlayerPosition, this.mesh.position);
@@ -130,10 +137,10 @@ export class Enemy {
       }
       targetPosition = this.lastKnownPlayerPosition;
 
-      // Yellow tint for searching
-      const material = this.mesh.material as THREE.MeshStandardMaterial;
-      material.emissive.setHex(0xffaa00);
-      material.emissiveIntensity = 0.2;
+      // Yellow tint for searching (only head)
+      const headMaterial = this.headMesh.material as THREE.MeshStandardMaterial;
+      headMaterial.emissive.setHex(0xffaa00);
+      headMaterial.emissiveIntensity = 0.3;
     } else {
       // Patrol behavior
       this.patrolChangeTimer += delta;
@@ -151,10 +158,10 @@ export class Enemy {
       direction.copy(this.patrolDirection);
       targetPosition = this.mesh.position.clone().add(direction);
 
-      // Reset color for patrol state
-      const material = this.mesh.material as THREE.MeshStandardMaterial;
-      material.emissive.setHex(0x000000);
-      material.emissiveIntensity = 0;
+      // Reset head color for patrol state
+      const headMaterial = this.headMesh.material as THREE.MeshStandardMaterial;
+      headMaterial.emissive.setHex(0x000000);
+      headMaterial.emissiveIntensity = 0;
     }
 
     // Calculate new position
@@ -230,14 +237,14 @@ export class Enemy {
   public takeDamage(amount: number): void {
     this.health = Math.max(0, this.health - amount);
 
-    // Visual feedback when hit
-    const material = this.mesh.material as THREE.MeshStandardMaterial;
-    material.emissive.setHex(0xff0000);
-    material.emissiveIntensity = 0.5;
+    // Visual feedback when hit (flash head red briefly)
+    const headMaterial = this.headMesh.material as THREE.MeshStandardMaterial;
+    headMaterial.emissive.setHex(0xff0000);
+    headMaterial.emissiveIntensity = 0.8;
 
     setTimeout(() => {
-      material.emissive.setHex(0x000000);
-      material.emissiveIntensity = 0;
+      headMaterial.emissive.setHex(0x000000);
+      headMaterial.emissiveIntensity = 0;
     }, 100);
 
     if (this.health <= 0) {
