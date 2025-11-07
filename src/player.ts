@@ -138,4 +138,8 @@ export class Player {
     direction.applyQuaternion(this.camera.quaternion);
     return direction;
   }
+
+  public getYaw(): number {
+    return this.yaw;
+  }
 }

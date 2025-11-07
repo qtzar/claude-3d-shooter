@@ -363,6 +363,10 @@ export class Game {
     // Update UI
     this.ui.updateWeapons(this.player.getWeaponInventory());
 
+    // Update minimap
+    const enemyPositions = this.enemies.map(e => e.getPosition());
+    this.ui.updateMinimap(this.player.getPosition(), this.player.getYaw(), enemyPositions);
+
     this.renderer.render(this.scene, this.camera);
   };
 
