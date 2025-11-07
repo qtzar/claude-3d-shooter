@@ -31,29 +31,29 @@ export class Door {
       emissiveIntensity: 0.2
     });
 
-    // Left jamb
+    // Left jamb (positioned along Z axis)
     const leftJamb = new THREE.Mesh(
       new THREE.BoxGeometry(0.3, 3, 0.3),
       frameMaterial
     );
-    leftJamb.position.set(-2.15, 1.5, 0);
+    leftJamb.position.set(0, 1.5, -2.15);
     leftJamb.castShadow = true;
     leftJamb.receiveShadow = true;
     this.frameGroup.add(leftJamb);
 
-    // Right jamb
+    // Right jamb (positioned along Z axis)
     const rightJamb = new THREE.Mesh(
       new THREE.BoxGeometry(0.3, 3, 0.3),
       frameMaterial
     );
-    rightJamb.position.set(2.15, 1.5, 0);
+    rightJamb.position.set(0, 1.5, 2.15);
     rightJamb.castShadow = true;
     rightJamb.receiveShadow = true;
     this.frameGroup.add(rightJamb);
 
-    // Top jamb (header)
+    // Top jamb (header) - spans along Z axis
     const topJamb = new THREE.Mesh(
-      new THREE.BoxGeometry(4.6, 0.3, 0.3),
+      new THREE.BoxGeometry(0.3, 0.3, 4.6),
       frameMaterial
     );
     topJamb.position.set(0, 3, 0);
@@ -72,7 +72,7 @@ export class Door {
     });
 
     this.doorMesh = new THREE.Mesh(doorGeometry, doorMaterial);
-    this.doorMesh.position.set(-2.05, 1.45, 0); // Position at left edge (hinges on left)
+    this.doorMesh.position.set(0, 1.45, -2.05); // Position at left edge (hinges on left/top)
     this.doorMesh.castShadow = true;
     this.doorMesh.receiveShadow = true;
 
@@ -95,7 +95,7 @@ export class Door {
     // Add door handle
     const handleGeometry = new THREE.BoxGeometry(0.2, 0.1, 0.3);
     const handle = new THREE.Mesh(handleGeometry, bandMaterial);
-    handle.position.set(0, 0, 1.5); // Right side of door
+    handle.position.set(0, 0, 1.5); // Right side of door (away from hinge)
     this.doorMesh.add(handle);
 
     this.frameGroup.add(this.doorMesh);
