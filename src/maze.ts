@@ -359,6 +359,10 @@ export class Maze {
     return this.mazeSize;
   }
 
+  public getGrid(): number[][] {
+    return this.grid;
+  }
+
   private addDoors(offsetX: number, offsetZ: number): void {
     // Find corridor positions and add doors (15% chance)
     for (let z = 2; z < this.mazeSize - 2; z++) {

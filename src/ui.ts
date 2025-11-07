@@ -1,5 +1,6 @@
 import { WeaponInventory, WeaponType, WEAPONS } from './weapon';
 import * as THREE from 'three';
+import { Maze } from './maze';
 
 export class UI {
   private healthElement: HTMLElement;
@@ -108,7 +109,7 @@ export class UI {
     return this.score;
   }
 
-  public updateMinimap(playerPos: THREE.Vector3, playerYaw: number, enemyPositions: THREE.Vector3[]): void {
+  public updateMinimap(playerPos: THREE.Vector3, playerYaw: number, enemyPositions: THREE.Vector3[], maze: Maze): void {
     const ctx = this.minimapCtx;
     const size = 150;
     const center = size / 2;
@@ -128,24 +129,48 @@ export class UI {
     ctx.fillStyle = 'rgba(20, 40, 20, 0.8)';
     ctx.fillRect(0, 0, size, size);
 
-    // Draw grid lines
-    ctx.strokeStyle = 'rgba(100, 150, 100, 0.3)';
-    ctx.lineWidth = 1;
-    const gridSize = 10 * scale; // 10 units per grid line
-    for (let i = -range; i <= range; i += 10) {
-      // Vertical lines
-      const x = center + i * scale;
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, size);
-      ctx.stroke();
+    // Draw maze walls
+    const grid = maze.getGrid();
+    const cellSize = maze.getCellSize();
+    const mazeSize = maze.getMazeSize();
+    const mazeOffset = (mazeSize * cellSize) / 2;
 
-      // Horizontal lines
-      const y = center + i * scale;
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(size, y);
-      ctx.stroke();
+    ctx.fillStyle = 'rgba(80, 80, 80, 0.8)';
+    for (let z = 0; z < mazeSize; z++) {
+      for (let x = 0; x < mazeSize; x++) {
+        if (grid[z][x] === 1) { // 1 = wall
+          // Calculate world position of this cell
+          const worldX = x * cellSize - mazeOffset + cellSize / 2;
+          const worldZ = z * cellSize - mazeOffset + cellSize / 2;
+
+          // Calculate relative position to player
+          const relX = worldX - playerPos.x;
+          const relZ = worldZ - playerPos.z;
+
+          // Check if cell is within range
+          if (Math.abs(relX) > range + cellSize || Math.abs(relZ) > range + cellSize) continue;
+
+          // Rotate relative to player's yaw (so "up" is forward direction)
+          // Fix: negate the Z coordinate to correct upside-down issue
+          const cos = Math.cos(-playerYaw);
+          const sin = Math.sin(-playerYaw);
+          const rotX = relX * cos - relZ * sin;
+          const rotZ = -(relX * sin + relZ * cos); // Negated to fix flip
+
+          // Convert to canvas coordinates
+          const canvasX = center + rotX * scale;
+          const canvasY = center + rotZ * scale;
+
+          // Draw wall cell
+          const cellPixelSize = cellSize * scale;
+          ctx.fillRect(
+            canvasX - cellPixelSize / 2,
+            canvasY - cellPixelSize / 2,
+            cellPixelSize,
+            cellPixelSize
+          );
+        }
+      }
     }
 
     // Draw enemies
@@ -159,12 +184,13 @@ export class UI {
       if (Math.abs(relX) > range || Math.abs(relZ) > range) continue;
 
       // Rotate relative to player's yaw (so "up" is forward direction)
+      // Fix: negate the Z coordinate to correct upside-down issue
       const cos = Math.cos(-playerYaw);
       const sin = Math.sin(-playerYaw);
       const rotX = relX * cos - relZ * sin;
-      const rotZ = relX * sin + relZ * cos;
+      const rotZ = -(relX * sin + relZ * cos); // Negated to fix flip
 
-      // Convert to canvas coordinates (Z is up on minimap)
+      // Convert to canvas coordinates
       const canvasX = center + rotX * scale;
       const canvasY = center + rotZ * scale;
 
@@ -174,7 +200,7 @@ export class UI {
       ctx.fill();
     }
 
-    // Draw player (blue triangle pointing forward)
+    // Draw player (cyan triangle pointing forward)
     ctx.fillStyle = '#00ffff';
     ctx.beginPath();
     ctx.moveTo(center, center - 6); // Forward point

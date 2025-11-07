@@ -365,7 +365,7 @@ export class Game {
 
     // Update minimap
     const enemyPositions = this.enemies.map(e => e.getPosition());
-    this.ui.updateMinimap(this.player.getPosition(), this.player.getYaw(), enemyPositions);
+    this.ui.updateMinimap(this.player.getPosition(), this.player.getYaw(), enemyPositions, this.maze);
 
     this.renderer.render(this.scene, this.camera);
   };
