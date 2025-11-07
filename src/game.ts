@@ -369,7 +369,7 @@ export class Game {
     // Check key collision
     if (this.keyPickup) {
       this.keyPickup.update(delta);
-      const distance = this.keyPickup.getPosition().distanceTo(playerPosition);
+      const distance = this.keyPickup.getPosition().distanceTo(this.player.getPosition());
       if (distance < 1.5) {
         this.soundManager.playPickup();
         this.nextLevel();
