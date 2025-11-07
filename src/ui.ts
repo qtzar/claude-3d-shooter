@@ -151,11 +151,10 @@ export class UI {
           if (Math.abs(relX) > range + cellSize || Math.abs(relZ) > range + cellSize) continue;
 
           // Rotate relative to player's yaw (so "up" is forward direction)
-          // Negate yaw to fix rotation direction
           const cos = Math.cos(playerYaw);
           const sin = Math.sin(playerYaw);
           const rotX = relX * cos - relZ * sin;
-          const rotZ = -(relX * sin + relZ * cos); // Negated to fix flip
+          const rotZ = relX * sin + relZ * cos;
 
           // Convert to canvas coordinates
           const canvasX = center + rotX * scale;
@@ -184,11 +183,10 @@ export class UI {
       if (Math.abs(relX) > range || Math.abs(relZ) > range) continue;
 
       // Rotate relative to player's yaw (so "up" is forward direction)
-      // Negate yaw to fix rotation direction
       const cos = Math.cos(playerYaw);
       const sin = Math.sin(playerYaw);
       const rotX = relX * cos - relZ * sin;
-      const rotZ = -(relX * sin + relZ * cos); // Negated to fix flip
+      const rotZ = relX * sin + relZ * cos;
 
       // Convert to canvas coordinates
       const canvasX = center + rotX * scale;
